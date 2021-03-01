@@ -25,18 +25,19 @@ fn ray_colour(r : &ray::Ray) -> Colour {
 
 fn sphere_intersection(centre: &Point3, radius: f64, r: &Ray) -> f64 {
 	let oc = r.origin - *centre;
-	let a = Vec3::dot(&r.dir, &r.dir);
-	let b = 2.0 * Vec3::dot(&oc, &r.dir);
-	let c = Vec3::dot(&oc,&oc) - radius * radius;
-	let disc = b*b - 4.0*a*c;
+	let a = r.dir.len_sq();
+	let half_b = Vec3::dot(&oc, &r.dir);
+	let c = oc.len_sq() - radius * radius;
+	let disc = half_b * half_b - a*c;
 	if disc < 0.0 {
 		return -1.0;
 	} else {
-		return (-b - disc.sqrt()) / (2.0 * a);
+		return (-half_b - disc.sqrt()) / a;
 	}
 }
 
 fn main() {
+	// TODO - add a timing param so it won't write colours, just calculate them
 
 	let start = Instant::now();
 

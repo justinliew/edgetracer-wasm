@@ -56,11 +56,11 @@ impl Vec3 {
 		Self{x: x, y: y, z: z}
 	}
 
-	fn len_sq(&self) -> f64 {
+	pub fn len_sq(&self) -> f64 {
 		self.x * self.x + self.y * self.y + self.z * self.z
 	}
 
-	fn len(&self) -> f64 {
+	pub fn len(&self) -> f64 {
 		self.len_sq().sqrt()
 	}
 
