@@ -3,6 +3,7 @@ mod ray;
 
 use vec3::{Colour, Point3, Vec3};
 use ray::Ray;
+use std::time::{Instant};
 
 fn write_colour(pixel_colour : Colour) {
 	println!("{} {} {}\n",
@@ -12,12 +13,32 @@ fn write_colour(pixel_colour : Colour) {
 }
 
 fn ray_colour(r : &ray::Ray) -> Colour {
+	let t = sphere_intersection(&Point3::new(0.0,0.0,-1.0), 0.5, r);
+	if t > 0.0 {
+		let N = Vec3::unit_vector(r.at(t) - Vec3::new(0.0,0.0,-1.0));
+		return Colour::new(N.x+1.0,N.y+1.0,N.z+1.0) * 0.5;
+	}
 	let unit_direction = Vec3::unit_vector(r.dir);
 	let t = 0.5 * (unit_direction.y + 1.0);
 	Colour::new(1.0,1.0,1.0) * (1.0-t) + Colour::new(0.5,0.7,1.0) * t
 }
 
+fn sphere_intersection(centre: &Point3, radius: f64, r: &Ray) -> f64 {
+	let oc = r.origin - *centre;
+	let a = Vec3::dot(&r.dir, &r.dir);
+	let b = 2.0 * Vec3::dot(&oc, &r.dir);
+	let c = Vec3::dot(&oc,&oc) - radius * radius;
+	let disc = b*b - 4.0*a*c;
+	if disc < 0.0 {
+		return -1.0;
+	} else {
+		return (-b - disc.sqrt()) / (2.0 * a);
+	}
+}
+
 fn main() {
+
+	let start = Instant::now();
 
 	// Image
 	const ASPECT_RATIO : f64 = (16/9) as f64;
@@ -47,5 +68,5 @@ fn main() {
 			write_colour(c);
 		}
 	}
-	eprint!("\ndone\n");
+	eprint!("\ndone {}ms\n", start.elapsed().as_millis());
 }

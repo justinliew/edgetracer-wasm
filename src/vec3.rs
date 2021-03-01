@@ -22,9 +22,9 @@ impl ops::Sub for Vec3 {
 	type Output = Self;
 	fn sub(self, other: Self) -> Self {
 		Self {
-			x: self.x + other.x,
-			y: self.y + other.y,
-			z: self.z + other.z,
+			x: self.x - other.x,
+			y: self.y - other.y,
+			z: self.z - other.z,
 		}
 	}
 }
@@ -67,6 +67,10 @@ impl Vec3 {
 	// TODO - reference to self? operator overload needs fixing
 	pub fn unit_vector(self) -> Vec3 {
 		self / self.len()
+	}
+
+	pub fn dot(a: &Vec3, b: &Vec3) -> f64 {
+		a.x * b.x + a.y * b.y + a.z * b.z
 	}
 }
 
