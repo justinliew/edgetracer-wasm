@@ -1,8 +1,16 @@
 mod vec3;
 mod ray;
+mod hittable;
+mod sphere;
+mod hittable_list;
+
+const INFINITY : f64 = std::f64::INFINITY;
 
 use vec3::{Colour, Point3, Vec3};
 use ray::Ray;
+use hittable::{Hittable};
+use hittable_list::{HittableList};
+use sphere::Sphere;
 use std::time::{Instant};
 
 fn write_colour(pixel_colour : Colour) {
@@ -12,27 +20,16 @@ fn write_colour(pixel_colour : Colour) {
 		(255.999 * pixel_colour.z) as usize);
 }
 
-fn ray_colour(r : &ray::Ray) -> Colour {
-	let t = sphere_intersection(&Point3::new(0.0,0.0,-1.0), 0.5, r);
-	if t > 0.0 {
-		let N = Vec3::unit_vector(r.at(t) - Vec3::new(0.0,0.0,-1.0));
-		return Colour::new(N.x+1.0,N.y+1.0,N.z+1.0) * 0.5;
-	}
-	let unit_direction = Vec3::unit_vector(r.dir);
-	let t = 0.5 * (unit_direction.y + 1.0);
-	Colour::new(1.0,1.0,1.0) * (1.0-t) + Colour::new(0.5,0.7,1.0) * t
-}
-
-fn sphere_intersection(centre: &Point3, radius: f64, r: &Ray) -> f64 {
-	let oc = r.origin - *centre;
-	let a = r.dir.len_sq();
-	let half_b = Vec3::dot(&oc, &r.dir);
-	let c = oc.len_sq() - radius * radius;
-	let disc = half_b * half_b - a*c;
-	if disc < 0.0 {
-		return -1.0;
-	} else {
-		return (-half_b - disc.sqrt()) / a;
+fn ray_colour(r : &ray::Ray, world: &dyn Hittable) -> Colour {
+	match world.hit(r, 0.0, INFINITY) {
+		Some(hr) => {
+			return (hr.normal + Colour::new(1.0,1.0,1.0)) * 0.5;
+		},
+		None => {
+			let unit_direction = Vec3::unit_vector(r.dir);
+			let t = 0.5 * (unit_direction.y + 1.0);
+			Colour::new(1.0,1.0,1.0) * (1.0-t) + Colour::new(0.5,0.7,1.0) * t
+		}
 	}
 }
 
@@ -45,6 +42,11 @@ fn main() {
 	const ASPECT_RATIO : f64 = (16/9) as f64;
 	const WIDTH : usize = 400;
 	const HEIGHT : usize = ((WIDTH as f64) / ASPECT_RATIO) as usize;
+
+	// World
+	let mut world : HittableList = HittableList::new();
+	world.add(Box::new(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5)));
+	world.add(Box::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100.)));
 
 	// Camera
 	const VIEWPORT_HEIGHT : f64 = 2.0;
@@ -65,7 +67,7 @@ fn main() {
 			let v = (j as f64) / ((HEIGHT-1) as f64);
 			let r = Ray::new(&origin,
 				&(ll + horizontal * u + vertical * v - origin));
-			let c = ray_colour(&r);
+			let c = ray_colour(&r, &world);
 			write_colour(c);
 		}
 	}

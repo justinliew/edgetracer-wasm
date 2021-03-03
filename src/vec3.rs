@@ -29,6 +29,13 @@ impl ops::Sub for Vec3 {
 	}
 }
 
+impl ops::Neg for Vec3 {
+	type Output = Self;
+	fn neg(self) -> Self::Output {
+		Vec3::new(-self.x,-self.y,-self.z)
+	}
+}
+
 impl ops::Mul<f64> for Vec3 {
 	type Output = Vec3;
 	fn mul(self, multiplier: f64) -> Self  {
