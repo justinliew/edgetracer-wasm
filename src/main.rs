@@ -4,11 +4,15 @@ mod camera;
 mod hittable;
 mod sphere;
 mod hittable_list;
+mod material;
+mod lambertian;
+mod metal;
+mod utils;
 
 const INFINITY : f64 = std::f64::INFINITY;
 
 use std::time::{Instant};
-use rand::Rng;
+use std::rc::Rc;
 
 use camera::{Camera};
 use hittable::{Hittable};
@@ -16,16 +20,10 @@ use hittable_list::{HittableList};
 use ray::Ray;
 use sphere::Sphere;
 use vec3::{Colour, Point3, Vec3};
+use lambertian::Lambertian;
+use metal::Metal;
+use utils::{clamp,rand_unit_vector};
 
-fn clamp(x: f64, min: f64, max: f64) -> f64 {
-	if x < min {
-		min
-	} else if x > max {
-		max
-	} else {
-		x
-	}
-}
 
 fn write_colour(pixel_colour : Colour, samples_per_pixel: usize) {
 	let scale = 1.0 / (samples_per_pixel as f64);
@@ -43,8 +41,12 @@ fn ray_colour(r : &ray::Ray, world: &dyn Hittable, depth: usize) -> Colour {
 	}
 	match world.hit(r, 0.001, INFINITY) {
 		Some(hr) => {
-			let target = hr.p + hr.normal + rand_unit_vector();
-			return ray_colour(&Ray::new(&hr.p, &(target - hr.p)), world, depth-1) * 0.5;
+			match hr.material.scatter(r, &hr) {
+				Some((scattered,attenuation)) => {
+					ray_colour(&scattered, world, depth-1) * attenuation
+				},
+				None => Colour::new(0.0,0.0,0.0)
+			}
 		},
 		None => {
 			let unit_direction = Vec3::unit_vector(r.dir);
@@ -54,18 +56,7 @@ fn ray_colour(r : &ray::Ray, world: &dyn Hittable, depth: usize) -> Colour {
 	}
 }
 
-fn rand_in_unit_sphere() -> Vec3 {
-	loop {
-		let p = Vec3::random_range(-1.0,1.0);
-		if p.len_sq() < 1.0 {
-			return p;
-		}
-	}
-}
 
-fn rand_unit_vector() -> Vec3 {
-	Vec3::unit_vector(rand_in_unit_sphere())
-}
 
 fn main() {
 	// TODO - add a timing param so it won't write colours, just calculate them
@@ -81,8 +72,15 @@ fn main() {
 
 	// World
 	let mut world : HittableList = HittableList::new();
-	world.add(Box::new(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5)));
-	world.add(Box::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100.)));
+	let material_ground = Rc::new(Lambertian::new(&Colour::new(0.8,0.8,0.0)));
+	let material_centre = Rc::new(Lambertian::new(&Colour::new(0.7,0.3,0.3)));
+	let material_left = Rc::new(Metal::new(&Colour::new(0.8,0.8,0.8)));
+	let material_right = Rc::new(Metal::new(&Colour::new(0.8,0.6,0.2)));
+
+	world.add(Box::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100., material_ground)));
+	world.add(Box::new(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5, material_centre)));
+	world.add(Box::new(Sphere::new(Point3::new(-1.0,0.0,-1.0), 0.5, material_left)));
+	world.add(Box::new(Sphere::new(Point3::new(1.0,0.0,-1.0), 0.5, material_right)));
 
 	// Camera
 	let camera = Camera::new(ASPECT_RATIO);

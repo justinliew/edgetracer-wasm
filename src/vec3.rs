@@ -48,6 +48,17 @@ impl ops::Mul<f64> for Vec3 {
 	}
 }
 
+impl ops::Mul for Vec3 {
+	type Output = Vec3;
+	fn mul(self, other: Vec3) -> Self {
+		Self {
+			x: self.x * other.x,
+			y: self.y * other.y,
+			z: self.z * other.z,
+		}
+	}
+}
+
 impl ops::Div<f64> for Vec3 {
 	type Output = Vec3;
 	fn div(self, divisor: f64) -> Self  {
@@ -95,6 +106,11 @@ impl Vec3 {
 
 	pub fn dot(a: &Vec3, b: &Vec3) -> f64 {
 		a.x * b.x + a.y * b.y + a.z * b.z
+	}
+
+	pub fn near_zero(&self) -> bool {
+		const SMALL : f64 = 1e-8;
+		f64::abs(self.x) < SMALL && f64::abs(self.y) < SMALL && f64::abs(self.z) < SMALL
 	}
 }
 
