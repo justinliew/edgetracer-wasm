@@ -8,6 +8,7 @@ mod hittable_list;
 const INFINITY : f64 = std::f64::INFINITY;
 
 use std::time::{Instant};
+use rand::Rng;
 
 use camera::{Camera};
 use hittable::{Hittable};
@@ -16,12 +17,23 @@ use ray::Ray;
 use sphere::Sphere;
 use vec3::{Colour, Point3, Vec3};
 
+fn clamp(x: f64, min: f64, max: f64) -> f64 {
+	if x < min {
+		min
+	} else if x > max {
+		max
+	} else {
+		x
+	}
+}
 
-fn write_colour(pixel_colour : Colour) {
+fn write_colour(pixel_colour : Colour, samples_per_pixel: usize) {
+	let scale = 1.0 / (samples_per_pixel as f64);
+	let cr = clamp(pixel_colour.x * scale, 0.0, 0.999);
 	println!("{} {} {}\n",
-		(255.999 * pixel_colour.x) as usize,
-		(255.999 * pixel_colour.y) as usize,
-		(255.999 * pixel_colour.z) as usize);
+		(256.0 * clamp(pixel_colour.x * scale, 0.0, 0.999)) as usize,
+		(256.0 * clamp(pixel_colour.y * scale, 0.0, 0.999)) as usize,
+		(256.0 * clamp(pixel_colour.z * scale, 0.0, 0.999)) as usize);
 }
 
 fn ray_colour(r : &ray::Ray, world: &dyn Hittable) -> Colour {
@@ -42,6 +54,9 @@ fn main() {
 
 	let start = Instant::now();
 
+	let mut rng = rand::thread_rng();
+	const SAMPLES_PER_PIXEL : usize = 100;
+
 	const ASPECT_RATIO : f64 = (16/9) as f64;
 	const WIDTH : usize = 400;
 	const HEIGHT : usize = ((WIDTH as f64) / ASPECT_RATIO) as usize;
@@ -60,11 +75,15 @@ fn main() {
 	for j in (0..HEIGHT).rev() {
 		eprint!("\r{} scanlines remaining", j);
 		for i in 0..WIDTH {
-			let u = (i as f64) / ((WIDTH-1) as f64);
-			let v = (j as f64) / ((HEIGHT-1) as f64);
-			let r = camera.ray(u,v);
-			let c = ray_colour(&r, &world);
-			write_colour(c);
+			let mut pixel_colour = Colour::new(0.0,0.0,0.0);
+			for _ in 0..SAMPLES_PER_PIXEL {
+				let u = ((i as f64) + rng.gen_range(0.0..1.0)) / ((WIDTH-1) as f64);
+				let v = ((j as f64) + rng.gen_range(0.0..1.0)) / ((HEIGHT-1) as f64);
+				let r = camera.ray(u,v);
+				let c = ray_colour(&r, &world);
+				pixel_colour = pixel_colour + c;
+			}
+			write_colour(pixel_colour, SAMPLES_PER_PIXEL);
 		}
 	}
 	eprint!("\ndone {}ms\n", start.elapsed().as_millis());
