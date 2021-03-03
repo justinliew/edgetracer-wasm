@@ -1,4 +1,5 @@
 use std::ops;
+use rand;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3 {
@@ -61,6 +62,22 @@ impl ops::Div<f64> for Vec3 {
 impl Vec3 {
 	pub fn new(x: f64, y: f64, z: f64) -> Self {
 		Self{x: x, y: y, z: z}
+	}
+
+	pub fn random() -> Self {
+		Self{
+			x: rand::random::<f64>(),
+			y: rand::random::<f64>(),
+			z: rand::random::<f64>(),
+		}
+	}
+
+	pub fn random_range(min: f64, max: f64) -> Self {
+		Self{
+			x: (rand::random::<f64>() * (max-min)) + min,
+			y: (rand::random::<f64>() * (max-min)) + min,
+			z: (rand::random::<f64>() * (max-min)) + min,
+		}
 	}
 
 	pub fn len_sq(&self) -> f64 {

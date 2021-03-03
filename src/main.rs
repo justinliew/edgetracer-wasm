@@ -36,10 +36,15 @@ fn write_colour(pixel_colour : Colour, samples_per_pixel: usize) {
 		(256.0 * clamp(pixel_colour.z * scale, 0.0, 0.999)) as usize);
 }
 
-fn ray_colour(r : &ray::Ray, world: &dyn Hittable) -> Colour {
+fn ray_colour(r : &ray::Ray, world: &dyn Hittable, depth: usize) -> Colour {
+
+	if depth  <= 0 {
+		return Colour::new(0.0,0.0,0.0);
+	}
 	match world.hit(r, 0.0, INFINITY) {
 		Some(hr) => {
-			return (hr.normal + Colour::new(1.0,1.0,1.0)) * 0.5;
+			let target = hr.p + hr.normal + rand_in_unit_sphere();
+			return ray_colour(&Ray::new(&hr.p, &(target - hr.p)), world, depth-1) * 0.5;
 		},
 		None => {
 			let unit_direction = Vec3::unit_vector(r.dir);
@@ -49,13 +54,22 @@ fn ray_colour(r : &ray::Ray, world: &dyn Hittable) -> Colour {
 	}
 }
 
+fn rand_in_unit_sphere() -> Vec3 {
+	loop {
+		let p = Vec3::random_range(-1.0,1.0);
+		if p.len_sq() < 1.0 {
+			return p;
+		}
+	}
+}
+
 fn main() {
 	// TODO - add a timing param so it won't write colours, just calculate them
 
 	let start = Instant::now();
 
-	let mut rng = rand::thread_rng();
-	const SAMPLES_PER_PIXEL : usize = 100;
+	const SAMPLES_PER_PIXEL : usize = 10;
+	const MAX_DEPTH : usize = 10;
 
 	const ASPECT_RATIO : f64 = (16/9) as f64;
 	const WIDTH : usize = 400;
@@ -73,14 +87,14 @@ fn main() {
 	// Render
 	println!("P3\n{} {}\n255\n", WIDTH, HEIGHT);
 	for j in (0..HEIGHT).rev() {
-		eprint!("\r{} scanlines remaining", j);
+		eprint!("\r{:03} scanlines remaining", j);
 		for i in 0..WIDTH {
 			let mut pixel_colour = Colour::new(0.0,0.0,0.0);
 			for _ in 0..SAMPLES_PER_PIXEL {
-				let u = ((i as f64) + rng.gen_range(0.0..1.0)) / ((WIDTH-1) as f64);
-				let v = ((j as f64) + rng.gen_range(0.0..1.0)) / ((HEIGHT-1) as f64);
+				let u = ((i as f64) + rand::random::<f64>()) / ((WIDTH-1) as f64);
+				let v = ((j as f64) + rand::random::<f64>()) / ((HEIGHT-1) as f64);
 				let r = camera.ray(u,v);
-				let c = ray_colour(&r, &world);
+				let c = ray_colour(&r, &world, MAX_DEPTH);
 				pixel_colour = pixel_colour + c;
 			}
 			write_colour(pixel_colour, SAMPLES_PER_PIXEL);
