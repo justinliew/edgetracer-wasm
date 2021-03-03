@@ -31,9 +31,9 @@ fn write_colour(pixel_colour : Colour, samples_per_pixel: usize) {
 	let scale = 1.0 / (samples_per_pixel as f64);
 	let cr = clamp(pixel_colour.x * scale, 0.0, 0.999);
 	println!("{} {} {}\n",
-		(256.0 * clamp(pixel_colour.x * scale, 0.0, 0.999)) as usize,
-		(256.0 * clamp(pixel_colour.y * scale, 0.0, 0.999)) as usize,
-		(256.0 * clamp(pixel_colour.z * scale, 0.0, 0.999)) as usize);
+		(256.0 * clamp(f64::sqrt(pixel_colour.x * scale), 0.0, 0.999)) as usize,
+		(256.0 * clamp(f64::sqrt(pixel_colour.y * scale), 0.0, 0.999)) as usize,
+		(256.0 * clamp(f64::sqrt(pixel_colour.z * scale), 0.0, 0.999)) as usize);
 }
 
 fn ray_colour(r : &ray::Ray, world: &dyn Hittable, depth: usize) -> Colour {
@@ -41,9 +41,9 @@ fn ray_colour(r : &ray::Ray, world: &dyn Hittable, depth: usize) -> Colour {
 	if depth  <= 0 {
 		return Colour::new(0.0,0.0,0.0);
 	}
-	match world.hit(r, 0.0, INFINITY) {
+	match world.hit(r, 0.001, INFINITY) {
 		Some(hr) => {
-			let target = hr.p + hr.normal + rand_in_unit_sphere();
+			let target = hr.p + hr.normal + rand_unit_vector();
 			return ray_colour(&Ray::new(&hr.p, &(target - hr.p)), world, depth-1) * 0.5;
 		},
 		None => {
@@ -61,6 +61,10 @@ fn rand_in_unit_sphere() -> Vec3 {
 			return p;
 		}
 	}
+}
+
+fn rand_unit_vector() -> Vec3 {
+	Vec3::unit_vector(rand_in_unit_sphere())
 }
 
 fn main() {
