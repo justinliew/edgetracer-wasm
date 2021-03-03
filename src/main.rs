@@ -1,17 +1,21 @@
 mod vec3;
 mod ray;
+mod camera;
 mod hittable;
 mod sphere;
 mod hittable_list;
 
 const INFINITY : f64 = std::f64::INFINITY;
 
-use vec3::{Colour, Point3, Vec3};
-use ray::Ray;
+use std::time::{Instant};
+
+use camera::{Camera};
 use hittable::{Hittable};
 use hittable_list::{HittableList};
+use ray::Ray;
 use sphere::Sphere;
-use std::time::{Instant};
+use vec3::{Colour, Point3, Vec3};
+
 
 fn write_colour(pixel_colour : Colour) {
 	println!("{} {} {}\n",
@@ -38,7 +42,6 @@ fn main() {
 
 	let start = Instant::now();
 
-	// Image
 	const ASPECT_RATIO : f64 = (16/9) as f64;
 	const WIDTH : usize = 400;
 	const HEIGHT : usize = ((WIDTH as f64) / ASPECT_RATIO) as usize;
@@ -49,14 +52,8 @@ fn main() {
 	world.add(Box::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100.)));
 
 	// Camera
-	const VIEWPORT_HEIGHT : f64 = 2.0;
-	const VIEWPORT_WIDTH : f64 = ASPECT_RATIO * VIEWPORT_HEIGHT;
-	const FOCAL_LENGTH : f64 = 1.0;
+	let camera = Camera::new(ASPECT_RATIO);
 
-	let origin : Point3 = Point3::new(0.0,0.0,0.0);
-	let horizontal : Point3 = Point3::new(VIEWPORT_WIDTH, 0.0,0.0);
-	let vertical : Point3 = Point3::new(0.0, VIEWPORT_HEIGHT, 0.0);
-	let ll : Vec3 = origin - horizontal/2.0 - vertical/2.0 - Vec3::new(0.0,0.0,FOCAL_LENGTH);
 
 	// Render
 	println!("P3\n{} {}\n255\n", WIDTH, HEIGHT);
@@ -65,8 +62,7 @@ fn main() {
 		for i in 0..WIDTH {
 			let u = (i as f64) / ((WIDTH-1) as f64);
 			let v = (j as f64) / ((HEIGHT-1) as f64);
-			let r = Ray::new(&origin,
-				&(ll + horizontal * u + vertical * v - origin));
+			let r = camera.ray(u,v);
 			let c = ray_colour(&r, &world);
 			write_colour(c);
 		}
