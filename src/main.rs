@@ -68,7 +68,7 @@ fn main() {
 	const SAMPLES_PER_PIXEL : usize = 10;
 	const MAX_DEPTH : usize = 10;
 
-	const ASPECT_RATIO : f64 = (16/9) as f64;
+	const ASPECT_RATIO : f64 = 16.0/9.0;
 	const WIDTH : usize = 400;
 	const HEIGHT : usize = ((WIDTH as f64) / ASPECT_RATIO) as usize;
 
