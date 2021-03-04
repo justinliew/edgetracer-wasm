@@ -85,7 +85,7 @@ fn main() {
 	world.add(Box::new(Sphere::new(Point3::new(1.0,0.0,-1.0), -0.4, material_right)));
 
 	// Camera
-	let camera = Camera::new(ASPECT_RATIO);
+	let camera = Camera::new(ASPECT_RATIO, 135.0);
 
 
 	// Render
