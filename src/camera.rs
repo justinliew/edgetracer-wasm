@@ -9,27 +9,30 @@ pub struct Camera {
 }
 
 impl Camera {
-	pub fn new(ar: f64, vfov: f64) -> Self {
+	pub fn new(ar: f64, vfov: f64, lookfrom: Point3, lookat: Point3, vup: Vec3) -> Self {
 
 		let theta = vfov.to_radians();
 		let h = f64::tan(theta / 2.0);
 		let viewport_height = 2.0 * h;
 		let viewport_width : f64 = ar * viewport_height;
 
-		const FOCAL_LENGTH : f64 = 1.0;
+		let w = Vec3::unit_vector(lookfrom - lookat);
+		let u = Vec3::unit_vector(Vec3::cross(&vup, &w));
+		let v = Vec3::cross(&w, &u);
 
-		let origin = Point3::new(0.0,0.0,0.0);
-		let horizontal = Point3::new(viewport_width, 0.0,0.0);
-		let vertical = Point3::new(0.0, viewport_height, 0.0);
+
+		let origin = lookfrom;
+		let horizontal = u * viewport_width;
+		let vertical = v * viewport_height;
 		Camera{
 			origin: origin,
-			lower_left: origin - horizontal/2.0 - vertical/2.0 - Vec3::new(0.0,0.0,FOCAL_LENGTH),
+			lower_left: origin - horizontal/2.0 - vertical/2.0 - w,
 			horizontal: horizontal,
 			vertical: vertical,
 		}
 	}
 
-	pub fn ray(&self, u: f64, v: f64) -> Ray {
-		Ray::new(&self.origin, &(self.lower_left + self.horizontal * u + self.vertical * v - self.origin))
+	pub fn get_ray(&self, s: f64, t: f64) -> Ray {
+		Ray::new(&self.origin, &(self.lower_left + self.horizontal * s + self.vertical * t - self.origin))
 	}
 }

@@ -24,7 +24,7 @@ use vec3::{Colour, Point3, Vec3};
 use lambertian::Lambertian;
 use metal::Metal;
 use dielectric::Dielectric;
-use utils::{clamp,rand_unit_vector};
+use utils::{clamp};
 
 
 fn write_colour(pixel_colour : Colour, samples_per_pixel: usize) {
@@ -85,7 +85,7 @@ fn main() {
 	world.add(Box::new(Sphere::new(Point3::new(1.0,0.0,-1.0), -0.4, material_right)));
 
 	// Camera
-	let camera = Camera::new(ASPECT_RATIO, 135.0);
+	let camera = Camera::new(ASPECT_RATIO, 90.0, Point3::new(-2.0,2.0,1.0), Point3::new(0.0,0.0,-1.0), Point3::new(0.0,1.0,0.0));
 
 
 	// Render
@@ -95,9 +95,9 @@ fn main() {
 		for i in 0..WIDTH {
 			let mut pixel_colour = Colour::new(0.0,0.0,0.0);
 			for _ in 0..SAMPLES_PER_PIXEL {
-				let u = ((i as f64) + rand::random::<f64>()) / ((WIDTH-1) as f64);
-				let v = ((j as f64) + rand::random::<f64>()) / ((HEIGHT-1) as f64);
-				let r = camera.ray(u,v);
+				let s = ((i as f64) + rand::random::<f64>()) / ((WIDTH-1) as f64);
+				let t = ((j as f64) + rand::random::<f64>()) / ((HEIGHT-1) as f64);
+				let r = camera.get_ray(s,t);
 				let c = ray_colour(&r, &world, MAX_DEPTH);
 				pixel_colour = pixel_colour + c;
 			}

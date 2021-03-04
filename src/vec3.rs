@@ -108,6 +108,14 @@ impl Vec3 {
 		a.x * b.x + a.y * b.y + a.z * b.z
 	}
 
+	pub fn cross(a: &Vec3, b: &Vec3) -> Vec3 {
+		Vec3::new(
+			a.y * b.z - a.z * b.y,
+			a.z * b.x - a.x * b.z,
+			a.x * b.y - a.y * b.x,
+		)
+	}
+
 	pub fn near_zero(&self) -> bool {
 		const SMALL : f64 = 1e-8;
 		f64::abs(self.x) < SMALL && f64::abs(self.y) < SMALL && f64::abs(self.z) < SMALL
