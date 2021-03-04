@@ -82,7 +82,7 @@ fn main() {
 	world.add(Box::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100., material_ground)));
 	world.add(Box::new(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5, material_centre)));
 	world.add(Box::new(Sphere::new(Point3::new(-1.0,0.0,-1.0), 0.5, material_left)));
-	world.add(Box::new(Sphere::new(Point3::new(1.0,0.0,-1.0), 0.5, material_right)));
+	world.add(Box::new(Sphere::new(Point3::new(1.0,0.0,-1.0), -0.4, material_right)));
 
 	// Camera
 	let camera = Camera::new(ASPECT_RATIO);

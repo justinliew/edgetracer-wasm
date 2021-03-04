@@ -15,6 +15,13 @@ impl Dielectric {
 		}
 	}
 
+	// Schlick's approximation
+	fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
+		let mut r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
+		r0 = r0*r0;
+		r0 + (1.0-r0) * f64::powf(1.0 - cosine, 5.0)
+	}
+
 }
 impl Material for Dielectric {
 	fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Ray, Colour)> {
@@ -26,7 +33,7 @@ impl Material for Dielectric {
 		let cos_theta = f64::min(Vec3::dot(&-unit_direction, &rec.normal), 1.0);
 		let sin_theta = f64::sqrt(1.0 - cos_theta*cos_theta);
 
-		let direction = match refraction_ratio * sin_theta > 1.0 {
+		let direction = match refraction_ratio * sin_theta > 1.0 || Dielectric::reflectance(cos_theta, refraction_ratio) > rand::random::<f64>() {
 			true => reflect(&unit_direction, &rec.normal),
 			false => refract(&unit_direction, &rec.normal, refraction_ratio),
 		};
