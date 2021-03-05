@@ -1,3 +1,8 @@
+//! Default Compute@Edge template program.
+
+use fastly::http::{header, Method, StatusCode};
+use fastly::{mime, Error, Request, Response};
+
 mod vec3;
 mod ray;
 mod camera;
@@ -9,100 +14,75 @@ mod material;
 mod lambertian;
 mod metal;
 mod utils;
+mod render;
 
-const INFINITY : f64 = std::f64::INFINITY;
+/// The name of a backend server associated with this service.
+///
+/// This should be changed to match the name of your own backend. See the the `Hosts` section of
+/// the Fastly WASM service UI for more information.
+const BACKEND_NAME: &str = "backend_name";
 
-use std::time::{Instant};
-use std::rc::Rc;
+/// The name of a second backend associated with this service.
+const OTHER_BACKEND_NAME: &str = "other_backend_name";
 
-use camera::{Camera};
-use hittable::{Hittable};
-use hittable_list::{HittableList};
-use ray::Ray;
-use sphere::Sphere;
-use vec3::{Colour, Point3, Vec3};
-use lambertian::Lambertian;
-use metal::Metal;
-use dielectric::Dielectric;
-use utils::{clamp};
+/// The entry point for your application.
+///
+/// This function is triggered when your service receives a client request. It could be used to
+/// route based on the request properties (such as method or path), send the request to a backend,
+/// make completely new requests, and/or generate synthetic responses.
+///
+/// If `main` returns an error, a 500 error response will be delivered to the client.
+#[fastly::main]
+fn main(mut req: Request) -> Result<Response, Error> {
+    // Make any desired changes to the client request.
+    req.set_header(header::HOST, "example.com");
 
+    // Filter request methods...
+    match req.get_method() {
+        // Allow GET and HEAD requests.
+        &Method::GET | &Method::HEAD => (),
 
-fn write_colour(pixel_colour : Colour, samples_per_pixel: usize) {
-	let scale = 1.0 / (samples_per_pixel as f64);
-	let cr = clamp(pixel_colour.x * scale, 0.0, 0.999);
-	println!("{} {} {}\n",
-		(256.0 * clamp(f64::sqrt(pixel_colour.x * scale), 0.0, 0.999)) as usize,
-		(256.0 * clamp(f64::sqrt(pixel_colour.y * scale), 0.0, 0.999)) as usize,
-		(256.0 * clamp(f64::sqrt(pixel_colour.z * scale), 0.0, 0.999)) as usize);
-}
+        // Accept PURGE requests; it does not matter to which backend they are sent.
+        m if m == "PURGE" => return Ok(req.send(BACKEND_NAME)?),
 
-fn ray_colour(r : &ray::Ray, world: &dyn Hittable, depth: usize) -> Colour {
+        // Deny anything else.
+        _ => {
+            return Ok(Response::from_status(StatusCode::METHOD_NOT_ALLOWED)
+                .with_header(header::ALLOW, "GET, HEAD")
+                .with_body_str("This method is not allowed\n"))
+        }
+    };
 
-	if depth  <= 0 {
-		return Colour::new(0.0,0.0,0.0);
-	}
-	match world.hit(r, 0.001, INFINITY) {
-		Some(hr) => {
-			match hr.material.scatter(r, &hr) {
-				Some((scattered,attenuation)) => {
-					ray_colour(&scattered, world, depth-1) * attenuation
-				},
-				None => Colour::new(0.0,0.0,0.0)
-			}
-		},
-		None => {
-			let unit_direction = Vec3::unit_vector(r.dir);
-			let t = 0.5 * (unit_direction.y + 1.0);
-			Colour::new(1.0,1.0,1.0) * (1.0-t) + Colour::new(0.5,0.7,1.0) * t
+    // Pattern match on the path.
+    match req.get_path() {
+
+		"/render" => {
+			println!("RENDERING");
+			render::do_render();
+			Ok(Response::from_status(StatusCode::OK))
 		}
-	}
-}
+        // If request is to the `/` path, send a default response.
+        "/" => Ok(Response::from_status(StatusCode::OK)
+            .with_content_type(mime::TEXT_HTML_UTF_8)
+            .with_body("<iframe src='https://developer.fastly.com/compute-welcome' style='border:0; position: absolute; top: 0; left: 0; width: 100%; height: 100%'></iframe>\n")),
 
+        // If request is to the `/backend` path, send to a named backend.
+        "/backend" => {
+            // Request handling logic could go here...  E.g., send the request to an origin backend
+            // and then cache the response for one minute.
+            req.set_ttl(60);
+            Ok(req.send(BACKEND_NAME)?)
+        }
 
+        // If request is to a path starting with `/other/`...
+        path if path.starts_with("/other/") => {
+            // Send request to a different backend and don't cache response.
+            req.set_pass(true);
+            Ok(req.send(OTHER_BACKEND_NAME)?)
+        }
 
-fn main() {
-	// TODO - add a timing param so it won't write colours, just calculate them
-
-	let start = Instant::now();
-
-	const SAMPLES_PER_PIXEL : usize = 10;
-	const MAX_DEPTH : usize = 10;
-
-	const ASPECT_RATIO : f64 = 16.0/9.0;
-	const WIDTH : usize = 400;
-	const HEIGHT : usize = ((WIDTH as f64) / ASPECT_RATIO) as usize;
-
-	// World
-	let mut world : HittableList = HittableList::new();
-	let material_ground = Rc::new(Lambertian::new(&Colour::new(0.8,0.8,0.0)));
-	let material_centre = Rc::new(Lambertian::new(&Colour::new(0.7,0.3,0.3)));
-	let material_left = Rc::new(Metal::new(&Colour::new(0.8,0.8,0.8)));
-	let material_right = Rc::new(Dielectric::new(1.5));
-
-	world.add(Box::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100., material_ground)));
-	world.add(Box::new(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5, material_centre)));
-	world.add(Box::new(Sphere::new(Point3::new(-1.0,0.0,-1.0), 0.5, material_left)));
-	world.add(Box::new(Sphere::new(Point3::new(1.0,0.0,-1.0), -0.4, material_right)));
-
-	// Camera
-	let camera = Camera::new(ASPECT_RATIO, 90.0, Point3::new(-2.0,2.0,1.0), Point3::new(0.0,0.0,-1.0), Point3::new(0.0,1.0,0.0));
-
-
-	// Render
-	println!("P3\n{} {}\n255\n", WIDTH, HEIGHT);
-	for j in (0..HEIGHT).rev() {
-		eprint!("\r{:03} scanlines remaining", j);
-		for i in 0..WIDTH {
-			let mut pixel_colour = Colour::new(0.0,0.0,0.0);
-			for _ in 0..SAMPLES_PER_PIXEL {
-				let s = ((i as f64) + rand::random::<f64>()) / ((WIDTH-1) as f64);
-				let t = ((j as f64) + rand::random::<f64>()) / ((HEIGHT-1) as f64);
-				let r = camera.get_ray(s,t);
-				let c = ray_colour(&r, &world, MAX_DEPTH);
-				pixel_colour = pixel_colour + c;
-			}
-			write_colour(pixel_colour, SAMPLES_PER_PIXEL);
-		}
-	}
-	eprint!("\ndone {}ms\n", start.elapsed().as_millis());
+        // Catch all other requests and return a 404.
+        _ => Ok(Response::from_status(StatusCode::NOT_FOUND)
+            .with_body_str("The page you requested could not be found\n")),
+    }
 }
