@@ -58,8 +58,10 @@ fn main(mut req: Request) -> Result<Response, Error> {
 
 		"/render" => {
 			println!("RENDERING");
-			render::do_render();
-			Ok(Response::from_status(StatusCode::OK))
+			let (t,d) = render::do_render();
+			Ok(Response::from_status(StatusCode::OK)
+				.with_content_type(mime::IMAGE_JPEG)
+				.with_body(d))
 		}
         // If request is to the `/` path, send a default response.
         "/" => Ok(Response::from_status(StatusCode::OK)

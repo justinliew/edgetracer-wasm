@@ -11,3 +11,4 @@ debug = true
 fastly = "^0.6.0"
 rand = "0.8.3"
 log-fastly = "0.2.0"
+image = "0.23.14"
