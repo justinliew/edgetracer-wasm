@@ -3,16 +3,19 @@ use crate::material::Material;
 use crate::ray::{Ray};
 use crate::hittable::{HitRecord,Hittable};
 
-use std::rc::Rc;
+use std::sync::Arc;
 
+use serde::{Serialize,Serializer};
+
+#[derive(Clone)]
 pub struct Sphere {
 	centre: Point3,
 	radius: f64,
-	material: Rc<dyn Material>,
+	material: Arc<dyn Material>,
 }
 
 impl Sphere {
-	pub fn new(c: Point3, r: f64, m: Rc<dyn Material>) -> Self {
+	pub fn new(c: Point3, r: f64, m: Arc<dyn Material>) -> Self {
 		Sphere{
 			centre: c,
 			radius: r,
@@ -39,6 +42,15 @@ impl Hittable for Sphere {
 
 		let p = r.at(root);
 		let outward_normal = (p - self.centre) / self.radius;
-		Some(HitRecord::new(r, root, &outward_normal, Rc::clone(&self.material)))
+		Some(HitRecord::new(r, root, &outward_normal, Arc::clone(&self.material)))
 	}
+
+	fn clone_hittable(&self) -> Box<dyn Hittable> {
+		Box::new(self.clone())
+	}
+
+	fn serialize_hittable(&self) {
+		println!("sphere serialize");
+	}
+
 }

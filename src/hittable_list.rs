@@ -2,9 +2,24 @@ use crate::hittable::{Hittable};
 use crate::ray::{Ray};
 use crate::hittable::{HitRecord};
 
+use serde::{Serialize,Serializer};
+
 #[derive(Clone)]
 pub struct HittableList {
-	list: Vec<Box<dyn Hittable + Sync + Send>>,
+	list: Vec<Box<dyn Hittable>>,
+}
+
+impl Serialize for HittableList {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+		println!("serialize hittable_list");
+		for h in &self.list {
+			h.serialize_hittable();
+		}
+		serializer.serialize_i32(0)
+	}
 }
 
 impl HittableList {
@@ -13,7 +28,7 @@ impl HittableList {
 			list: Vec::new()
 		}
 	}
-	pub fn add(&mut self, o: Box<dyn Hittable + Sync + Send>) {
+	pub fn add(&mut self, o: Box<dyn Hittable>) {
 		self.list.push(o);
 	}
 }
@@ -37,7 +52,11 @@ impl Hittable for HittableList {
 		rec
 	}
 
-	fn clone_hittable(&self) -> Box<dyn Hittable + Sync + Send> {
+	fn clone_hittable(&self) -> Box<dyn Hittable> {
 		Box::new(self.clone())
+	}
+
+	fn serialize_hittable(&self) {
+		println!("hittable_list serialize");
 	}
 }

@@ -4,6 +4,7 @@ use crate::ray::Ray;
 use crate::hittable::HitRecord;
 use crate::utils::{rand_unit_vector};
 
+#[derive(Serialize,Deserialize)]
 pub struct Lambertian {
 	albedo: Colour,
 }
@@ -15,6 +16,7 @@ impl Lambertian {
 		}
 	}
 }
+
 impl Material for Lambertian {
 	fn scatter(&self, _r_in: &Ray, rec: &HitRecord) -> Option<(Ray, Colour)> {
 
