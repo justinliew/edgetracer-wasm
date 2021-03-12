@@ -16,6 +16,10 @@ mod metal;
 mod utils;
 mod render;
 
+#[macro_use]
+extern crate serde;
+
+
 /// The name of a backend server associated with this service.
 ///
 /// This should be changed to match the name of your own backend. See the the `Hosts` section of
@@ -57,11 +61,11 @@ fn main(mut req: Request) -> Result<Response, Error> {
     match req.get_path() {
 
 		"/render" => {
-			println!("RENDERING");
-			let (t,d) = render::do_render();
-			Ok(Response::from_status(StatusCode::OK)
-				.with_content_type(mime::IMAGE_JPEG)
-				.with_body(d))
+			println!("/render is currenty only called from the native Rust client");
+			// let (t,d) = render::do_render();
+			Ok(Response::from_status(StatusCode::OK))
+				// .with_content_type(mime::IMAGE_JPEG)
+				// .with_body(d))
 		}
         // If request is to the `/` path, send a default response.
         "/" => Ok(Response::from_status(StatusCode::OK)
