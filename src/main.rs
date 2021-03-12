@@ -67,6 +67,13 @@ fn main(mut req: Request) -> Result<Response, Error> {
 				// .with_content_type(mime::IMAGE_JPEG)
 				// .with_body(d))
 		}
+		"/rendertile" => {
+//			render::render_tile()
+			// let (t,d) = render::do_render();
+			Ok(Response::from_status(StatusCode::OK))
+				// .with_content_type(mime::IMAGE_JPEG)
+				// .with_body(d))
+		}
         // If request is to the `/` path, send a default response.
         "/" => Ok(Response::from_status(StatusCode::OK)
             .with_content_type(mime::TEXT_HTML_UTF_8)
