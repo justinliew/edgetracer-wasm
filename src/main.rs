@@ -70,6 +70,9 @@ fn main(mut req: Request) -> Result<Response, Error> {
 		"/rendertile" => {
 //			render::render_tile()
 			// let (t,d) = render::do_render();
+			let b = req.into_body();
+			let s = b.into_string();
+			println!("/rendertile {}", s);
 			Ok(Response::from_status(StatusCode::OK))
 				// .with_content_type(mime::IMAGE_JPEG)
 				// .with_body(d))
