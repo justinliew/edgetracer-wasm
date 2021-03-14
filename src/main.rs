@@ -70,7 +70,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
 			let b = req.into_body();
 			let s = b.into_string();
 			let input : HittableListWithTile = serde_json::from_str(&s).unwrap();
-			let res = render::render_tile(&input.h, input.i,input.j, input.width, input.height);
+			let res = render::render_tile(&input.h, input.i,input.j, input.dimi, input.dimj, input.width, input.height);
 			let res_json = serde_json::to_string(&res).unwrap();
 			Ok(Response::from_status(StatusCode::OK)
 				.with_body(res_json))
