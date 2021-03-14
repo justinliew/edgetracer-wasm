@@ -6,8 +6,8 @@ use fastly::{mime, Error, Request, Response};
 mod vec3;
 mod ray;
 mod camera;
-mod hitrecord;
 mod hittable;
+mod hitrecord;
 mod hittable_list;
 mod material;
 mod utils;
@@ -15,6 +15,8 @@ mod render;
 
 #[macro_use]
 extern crate serde;
+
+use hittable_list::HittableListWithTile;
 
 
 /// The name of a backend server associated with this service.
@@ -41,7 +43,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
     // Filter request methods...
     match req.get_method() {
         // Allow GET and HEAD requests.
-        &Method::GET | &Method::HEAD => (),
+        &Method::GET | &Method::HEAD | &Method::POST => (),
 
         // Accept PURGE requests; it does not matter to which backend they are sent.
         m if m == "PURGE" => return Ok(req.send(BACKEND_NAME)?),
@@ -65,12 +67,13 @@ fn main(mut req: Request) -> Result<Response, Error> {
 				// .with_body(d))
 		}
 		"/rendertile" => {
-//			render::render_tile()
-			// let (t,d) = render::do_render();
 			let b = req.into_body();
 			let s = b.into_string();
-			println!("/rendertile {}", s);
-			Ok(Response::from_status(StatusCode::OK))
+			let input : HittableListWithTile = serde_json::from_str(&s).unwrap();
+			let res = render::render_tile(&input.h, input.i,input.j, input.width, input.height);
+			let res_json = serde_json::to_string(&res).unwrap();
+			Ok(Response::from_status(StatusCode::OK)
+				.with_body(res_json))
 				// .with_content_type(mime::IMAGE_JPEG)
 				// .with_body(d))
 		}
