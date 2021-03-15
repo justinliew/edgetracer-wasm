@@ -7,6 +7,10 @@ edition = "2018"
 [profile.release]
 debug = true
 
+[features]
+default = ["ecp"]
+ecp = []
+
 [dependencies]
 fastly = "^0.6.0"
 rand = "0.8.3"
